@@ -4,7 +4,7 @@ A phone agent that registers new U.S. patients by natural conversation, saves th
 
 | | |
 |---|---|
-| **Phone number** | `+1 (737) 637-8556` ← _fill in after provisioning_ |
+| **Phone number** | `+1 (737) 637-8556`  |
 | **API base URL** | `https://voice-patient-registration-production-ed38.up.railway.app` |
 | **Dashboard** | `https://voice-patient-registration-production-ed38.up.railway.app/dashboard` |
 | **Interactive API docs** | `https://voice-patient-registration-production-ed38.up.railway.app/docs` |
