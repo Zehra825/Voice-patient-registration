@@ -4,14 +4,13 @@ A phone agent that registers new U.S. patients by natural conversation, saves th
 
 | | |
 |---|---|
-| **Phone number** | `+1 (XXX) XXX-XXXX` ← _fill in after provisioning_ |
-| **API base URL** | `https://YOUR-APP.up.railway.app` |
-| **Dashboard** | `https://YOUR-APP.up.railway.app/dashboard` |
-| **Interactive API docs** | `https://YOUR-APP.up.railway.app/docs` |
+| **Phone number** | `+1 (737) 637-8556` ← _fill in after provisioning_ |
+| **API base URL** | `https://voice-patient-registration-production-ed38.up.railway.app` |
+| **Dashboard** | `https://voice-patient-registration-production-ed38.up.railway.app/dashboard` |
+| **Interactive API docs** | `https://voice-patient-registration-production-ed38.up.railway.app/docs` |
 | **Credentials** | None needed. Read and write endpoints are open for review (see _Security_). |
 
-**Try it:** call the number, give a name, date of birth, phone and address, confirm the read-back. The record appears on the dashboard within ~10 seconds. Call again from the same phone number (or give the same number) and the agent recognizes you and offers to update your record instead of creating a duplicate.
-
+** It's set up and waiting on billing.
 ---
 
 ## Architecture
