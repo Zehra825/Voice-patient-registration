@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patient Registrations</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #16181d; --muted: #5d6573; --line: #e3e6eb;
+    --accent: #0f766e; --accent-soft: #e6f4f2; --warn: #b45309; --warn-soft: #fdf3e4; --danger: #b42318;
+    --radius: 10px; --shadow: 0 1px 2px rgba(16,24,40,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1115; --panel: #171a21; --text: #e8eaee; --muted: #9aa3b2; --line: #2a2f3a;
+            --accent: #2dd4bf; --accent-soft: #12302d; --warn: #fbbf24; --warn-soft: #33270f; --danger: #f87171; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  h1 { font-size: 18px; margin: 0; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .live { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .dot.off { background: var(--danger); box-shadow: none; }
+  main { max-width: 1200px; margin: 0 auto; padding: 20px 24px 48px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+  .stat b { display: block; font-size: 24px; font-variant-numeric: tabular-nums; }
+  .stat span { color: var(--muted); font-size: 12px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+  .tab { border: 1px solid var(--line); background: transparent; color: var(--muted); padding: 7px 14px; border-radius: 999px; cursor: pointer; font: inherit; }
+  .tab[aria-selected="true"] { background: var(--text); color: var(--panel); border-color: var(--text); }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  input { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-width: 0; flex: 1 1 160px; }
+  button.plain { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--text); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--accent-soft); }
+  tbody tr:last-child td { border-bottom: 0; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; background: var(--accent-soft); color: var(--accent); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .empty { padding: 32px; text-align: center; color: var(--muted); }
+  .num { font-variant-numeric: tabular-nums; }
+  dialog { border: 1px solid var(--line); border-radius: 14px; padding: 0; width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 48px); background: var(--panel); color: var(--text); }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  .dlg-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--panel); }
+  .dlg-body { padding: 16px 20px 24px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 20px; }
+  .kv span { display: block; color: var(--muted); font-size: 12px; }
+  h3 { font-size: 13px; margin: 20px 0 8px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  pre { white-space: pre-wrap; word-break: break-word; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; font: 12.5px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; max-height: 320px; overflow: auto; }
+  .muted { color: var(--muted); }
+  @media (max-width: 640px) { header, main { padding-left: 16px; padding-right: 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1 id="clinic">Patient Registrations</h1>
+    <div class="sub" id="phone">Voice intake dashboard</div>
+  </div>
+  <div class="live"><span class="dot" id="dot"></span><span id="updated">Connecting…</span></div>
+</header>
+<main>
+  <section class="stats" aria-label="Summary">
+    <div class="stat"><b id="s-total">–</b><span>Registered patients</span></div>
+    <div class="stat"><b id="s-today">–</b><span>Registered today</span></div>
+    <div class="stat"><b id="s-calls">–</b><span>Recent calls</span></div>
+    <div class="stat"><b id="s-incomplete">–</b><span>Incomplete calls (follow up)</span></div>
+  </section>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-tab="patients">Patients</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="calls">Calls</button>
+  </div>
+
+  <section id="patients-view">
+    <form class="filters" id="filters">
+      <input name="last_name" placeholder="Last name" autocomplete="off">
+      <input name="date_of_birth" placeholder="DOB (MM/DD/YYYY)" autocomplete="off">
+      <input name="phone_number" placeholder="Phone" autocomplete="off">
+      <button class="plain" type="submit">Search</button>
+      <button class="plain" type="reset">Clear</button>
+    </form>
+    <div class="card"><table>
+      <thead><tr><th>Name</th><th>DOB</th><th>Sex</th><th>Phone</th><th>City, State</th><th>Insurance</th><th>Language</th><th>Registered</th></tr></thead>
+      <tbody id="patients"></tbody>
+    </table></div>
+    <p class="muted" id="filter-msg"></p>
+  </section>
+
+  <section id="calls-view" hidden>
+    <div class="card"><table>
+      <thead><tr><th>Started</th><th>Caller</th><th>Status</th><th>Outcome</th><th>Ended reason</th><th>Summary</th></tr></thead>
+      <tbody id="calls"></tbody>
+    </table></div>
+  </section>
+</main>
+
+<dialog id="dlg">
+  <div class="dlg-head">
+    <div><h2 id="dlg-title" style="margin:0;font-size:17px"></h2><div class="sub" id="dlg-sub"></div></div>
+    <button class="plain" id="dlg-close" aria-label="Close">Close</button>
+  </div>
+  <div class="dlg-body" id="dlg-body"></div>
+</dialog>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const phone = (p) => p && p.length === 10 ? `(${p.slice(0,3)}) ${p.slice(3,6)}-${p.slice(6)}` : (p || "");
+const when = (iso) => iso ? new Date(iso).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "";
+let filters = {};
+let lastPatients = [];
+let lastCalls = [];
+
+async function api(path) {
+  const res = await fetch(path, { headers: { Accept: "application/json" } });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body?.error?.message || res.statusText);
+  return body.data;
+}
+
+function renderPatients(rows) {
+  lastPatients = rows;
+  $("patients").innerHTML = rows.length ? rows.map((p) => `
+    <tr data-id="${esc(p.patient_id)}">
+      <td><b>${esc(p.first_name)} ${esc(p.last_name)}</b></td>
+      <td class="num">${esc(p.date_of_birth)}</td>
+      <td>${esc(p.sex)}</td>
+      <td class="num">${esc(phone(p.phone_number))}</td>
+      <td>${esc(p.city)}, ${esc(p.state)}</td>
+      <td>${esc(p.insurance_provider || "—")}</td>
+      <td>${esc(p.preferred_language)}</td>
+      <td class="num">${esc(when(p.created_at))}</td>
+    </tr>`).join("") : `<tr><td colspan="8" class="empty">No patients match.</td></tr>`;
+}
+
+function renderCalls(rows) {
+  lastCalls = rows;
+  $("calls").innerHTML = rows.length ? rows.map((c) => `
+    <tr data-call="${esc(c.call_id)}">
+      <td class="num">${esc(when(c.started_at || c.created_at))}</td>
+      <td class="num">${esc(c.caller_number || "—")}</td>
+      <td><span class="pill ${c.status === "completed" ? "" : "warn"}">${esc(c.status.replace("_", " "))}</span></td>
+      <td>${esc(c.outcome || "—")}</td>
+      <td>${esc(c.ended_reason || "—")}</td>
+      <td style="white-space:normal;min-width:260px">${esc(c.summary || "")}</td>
+    </tr>`).join("") : `<tr><td colspan="6" class="empty">No calls yet. Call the number to see one appear here.</td></tr>`;
+}
+
+async function refresh() {
+  try {
+    const qs = new URLSearchParams(Object.entries(filters).filter(([, v]) => v)).toString();
+    const [patients, allPatients, calls] = await Promise.all([
+      api("/patients" + (qs ? "?" + qs : "")),
+      qs ? api("/patients?limit=500") : null,
+      api("/calls?limit=100"),
+    ]);
+    const everyone = allPatients || patients;
+    const today = new Date().toDateString();
+    $("s-total").textContent = everyone.length;
+    $("s-today").textContent = everyone.filter((p) => new Date(p.created_at).toDateString() === today).length;
+    $("s-calls").textContent = calls.length;
+    $("s-incomplete").textContent = calls.filter((c) => c.status === "incomplete").length;
+    renderPatients(patients);
+    renderCalls(calls);
+    $("filter-msg").textContent = "";
+    $("dot").className = "dot";
+    $("updated").textContent = "Live · updated " + new Date().toLocaleTimeString();
+  } catch (err) {
+    $("dot").className = "dot off";
+    $("updated").textContent = "Offline: " + err.message;
+    if (String(err.message).toLowerCase().includes("invalid")) $("filter-msg").textContent = err.message;
+  }
+}
+
+function kv(label, value) { return `<div class="kv"><span>${esc(label)}</span>${esc(value || "—")}</div>`; }
+
+async function openPatient(id) {
+  const p = lastPatients.find((x) => x.patient_id === id) || await api(`/patients/${id}`);
+  $("dlg-title").textContent = `${p.first_name} ${p.last_name}`;
+  $("dlg-sub").textContent = `Patient ID ${p.patient_id}`;
+  $("dlg-body").innerHTML = `<div class="grid">
+      ${kv("Date of birth", p.date_of_birth)}${kv("Sex", p.sex)}${kv("Phone", phone(p.phone_number))}${kv("Email", p.email)}
+      ${kv("Address", [p.address_line_1, p.address_line_2].filter(Boolean).join(", "))}${kv("City / State / ZIP", `${p.city}, ${p.state} ${p.zip_code}`)}
+      ${kv("Insurance", p.insurance_provider)}${kv("Member ID", p.insurance_member_id)}${kv("Preferred language", p.preferred_language)}
+      ${kv("Emergency contact", p.emergency_contact_name)}${kv("Emergency phone", phone(p.emergency_contact_phone))}
+      ${kv("Created / updated", `${when(p.created_at)} / ${when(p.updated_at)}`)}
+    </div><h3>Appointments</h3><div id="appts" class="muted">Loading…</div><h3>Calls</h3><div id="pcalls" class="muted">Loading…</div>`;
+  $("dlg").showModal();
+  const [appts, calls] = await Promise.all([api(`/patients/${id}/appointments`), api(`/patients/${id}/calls`)]);
+  $("appts").innerHTML = appts.length ? appts.map((a) => `<div>${esc(when(a.scheduled_at))} · ${esc(a.provider_name)} <span class="pill">${esc(a.status)}</span></div>`).join("") : "None booked.";
+  $("pcalls").innerHTML = calls.length ? calls.map(callBlock).join("") : "No calls linked (seed or API-created record).";
+}
+
+function callBlock(c) {
+  return `<div style="margin-bottom:14px">
+    <div><b>${esc(when(c.started_at || c.created_at))}</b> · ${esc(c.outcome || c.status)} · ${esc(c.ended_reason || "")}</div>
+    ${c.summary ? `<p style="margin:6px 0">${esc(c.summary)}</p>` : ""}
+    ${c.transcript ? `<pre>${esc(c.transcript)}</pre>` : `<div class="muted">Transcript arrives when the call ends.</div>`}
+  </div>`;
+}
+
+function openCall(id) {
+  const c = lastCalls.find((x) => x.call_id === id);
+  if (!c) return;
+  $("dlg-title").textContent = `Call from ${c.caller_number || "unknown"}`;
+  $("dlg-sub").textContent = `${c.status} · Vapi call ${c.vapi_call_id}`;
+  const partial = c.collected_data && Object.keys(c.collected_data).length
+    ? `<h3>Data collected before the call ended</h3><pre>${esc(JSON.stringify(c.collected_data, null, 2))}</pre>` : "";
+  $("dlg-body").innerHTML = `${c.patient_id ? `<p><button class="plain" data-open="${esc(c.patient_id)}">Open patient record</button></p>` : ""}${partial}<h3>Transcript</h3>${callBlock(c)}`;
+  $("dlg").showModal();
+}
+
+document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach((x) => x.setAttribute("aria-selected", x === t));
+  $("patients-view").hidden = t.dataset.tab !== "patients";
+  $("calls-view").hidden = t.dataset.tab !== "calls";
+}));
+$("patients").addEventListener("click", (e) => { const tr = e.target.closest("tr[data-id]"); if (tr) openPatient(tr.dataset.id); });
+$("calls").addEventListener("click", (e) => { const tr = e.target.closest("tr[data-call]"); if (tr) openCall(tr.dataset.call); });
+$("dlg-body").addEventListener("click", (e) => { const b = e.target.closest("[data-open]"); if (b) { $("dlg").close(); openPatient(b.dataset.open); } });
+$("dlg-close").addEventListener("click", () => $("dlg").close());
+$("filters").addEventListener("submit", (e) => { e.preventDefault(); filters = Object.fromEntries(new FormData(e.target)); refresh(); });
+$("filters").addEventListener("reset", () => { filters = {}; setTimeout(refresh); });
+
+api("/").then((info) => {
+  $("clinic").textContent = `${info.clinic} · Patient Registrations`;
+  if (info.phone_number) $("phone").textContent = `Call ${info.phone_number} to register a patient`;
+  else if (info.voice_agent === "running" || info.voice_agent === "waiting_for_number") $("phone").textContent = "Voice agent is being set up… refresh in a minute";
+  else if (info.voice_agent === "error") $("phone").textContent = "Voice agent setup failed; see /vapi/status";
+}).catch(() => {});
+refresh();
+setInterval(() => { if (!$("dlg").open) refresh(); }, 10000);
+</script>
+</body>
+</html>
